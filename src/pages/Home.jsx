@@ -11,10 +11,16 @@ const Home = () => {
     const [randomMeal, setRandomMeal] = useState(null);
     const [favoriteMeals, setFavoriteMeals] = useState([]);
     const [favoriteMealIds, setFavoriteMealIds] = useState([]);
-    //console.log(RANDOM_API)
 
     useEffect(() => {
         loadRandomMeal();
+        // Load saved favorites from localStorage
+        const savedFavorites = localStorage.getItem("favoriteMeals");
+        if (savedFavorites) {
+            const parsedFavorites = JSON.parse(savedFavorites);
+            setFavoriteMeals(parsedFavorites);
+            setFavoriteMealIds(parsedFavorites.map((meal) => meal.idMeal));
+        }
     }, []);
 
     const loadRandomMeal = async () => {
@@ -25,23 +31,45 @@ const Home = () => {
         setRandomMeal(meal);
     };
 
-    const getMealById = async (id) => {
-        const resp = await fetch(MEAL_BYID_API + id);
-        const data = await resp.json();
-        let meal = data.meals[0];
-        //console.log(meal);
-        return meal;
+    const addToFavorites = (meal) => {
+        // Only add if not already in favorites
+        if (!favoriteMealIds.includes(meal.idMeal)) {
+            const updatedFavorites = [...favoriteMeals, meal];
+            setFavoriteMeals(updatedFavorites);
+            setFavoriteMealIds([...favoriteMealIds, meal.idMeal]);
+            localStorage.setItem(
+                "favoriteMeals",
+                JSON.stringify(updatedFavorites)
+            );
+        }
+    };
+
+    const removeFavorite = (mealId) => {
+        const updatedFavorites = favoriteMeals.filter(
+            (meal) => meal.idMeal !== mealId
+        );
+        setFavoriteMeals(updatedFavorites);
+        setFavoriteMealIds(updatedFavorites.map((meal) => meal.idMeal));
+        localStorage.setItem("favoriteMeals", JSON.stringify(updatedFavorites));
     };
 
     return (
         <div className="store">
             <Search />
 
-            <Favorites favoriteMeals={favoriteMeals} />
+            <Favorites
+                favoriteMeals={favoriteMeals}
+                removeFavorite={removeFavorite}
+            />
 
             <div className="meals" id="meals">
                 {randomMeal && (
-                    <MealCard mealData={randomMeal} isRandom={true} />
+                    <MealCard
+                        mealData={randomMeal}
+                        isRandom={true}
+                        isFavorite={favoriteMealIds.includes(randomMeal.idMeal)}
+                        addToFavorites={() => addToFavorites(randomMeal)}
+                    />
                 )}
             </div>
         </div>
