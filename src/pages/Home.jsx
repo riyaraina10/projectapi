@@ -11,10 +11,12 @@ const Home = () => {
     const [randomMeal, setRandomMeal] = useState(null);
     const [favoriteMeals, setFavoriteMeals] = useState([]);
     const [favoriteMealIds, setFavoriteMealIds] = useState([]);
+    const [allMeals, setAllMeals] = useState([]);
 
     useEffect(() => {
         loadRandomMeal();
-        // Load saved favorites from localStorage
+        loadAllMeals();
+
         const savedFavorites = localStorage.getItem("favoriteMeals");
         if (savedFavorites) {
             const parsedFavorites = JSON.parse(savedFavorites);
@@ -24,15 +26,21 @@ const Home = () => {
     }, []);
 
     const loadRandomMeal = async () => {
-        const resp = await fetch(RANDOM_API);
+        const resp = await fetch(SEARCH_API);
         const data = await resp.json();
+        console.log(data);
+        console.log(data.meals);
         let meal = data.meals[0];
         console.log(meal);
         setRandomMeal(meal);
     };
+    const loadAllMeals = async () => {
+        const resp = await fetch(SEARCH_API);
+        const data = await resp.json();
+        setAllMeals(data.meals || []);
+    };
 
     const addToFavorites = (meal) => {
-        // Only add if not already in favorites
         if (!favoriteMealIds.includes(meal.idMeal)) {
             const updatedFavorites = [...favoriteMeals, meal];
             setFavoriteMeals(updatedFavorites);
@@ -52,10 +60,20 @@ const Home = () => {
         setFavoriteMealIds(updatedFavorites.map((meal) => meal.idMeal));
         localStorage.setItem("favoriteMeals", JSON.stringify(updatedFavorites));
     };
+    const handleSearch = async (query) => {
+        if (!query.trim()) {
+            loadAllMeals();
+            return;
+        }
+
+        const resp = await fetch(`${SEARCH_API}${query}`);
+        const data = await resp.json();
+        setAllMeals(data.meals || []);
+    };
 
     return (
         <div className="store">
-            <Search />
+            <Search onSearch={handleSearch} />
 
             <Favorites
                 favoriteMeals={favoriteMeals}
@@ -71,6 +89,15 @@ const Home = () => {
                         addToFavorites={() => addToFavorites(randomMeal)}
                     />
                 )}
+
+                {allMeals.map((meal) => (
+                    <MealCard
+                        key={meal.idMeal}
+                        mealData={meal}
+                        isFavorite={favoriteMealIds.includes(meal.idMeal)}
+                        addToFavorites={() => addToFavorites(meal)}
+                    />
+                ))}
             </div>
         </div>
     );

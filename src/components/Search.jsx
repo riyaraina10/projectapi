@@ -1,12 +1,24 @@
 import { useState } from "react";
 
-const Search = () => {
-  
-  return (
-    <div className="row">
-      Search Component
-    </div>
-  );
-}
+const Search = ({ onSearch }) => {
+    const [query, setQuery] = useState("");
 
-export default Search
+    const handleChange = (e) => {
+        const value = e.target.value;
+        setQuery(value);
+        onSearch(value);
+    };
+
+    return (
+        <div className="search-box">
+            <input
+                type="text"
+                placeholder="Search for a meal..."
+                value={query}
+                onChange={handleChange}
+            />
+        </div>
+    );
+};
+
+export default Search;
